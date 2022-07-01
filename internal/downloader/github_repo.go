@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 	"errors"
+	"io"
+	"os"
 )
 
 func fromRepoToArchiveUrl(repoUrl string) (string, error) {
@@ -46,9 +48,36 @@ func FromGithubRepo(repoUrl string) error {
 
 	resp, err := http.Head(url)
 	if err != nil {
-		panic(err)
+		return err
 	}
+
 	finalURL := resp.Request.URL.String()
-	fmt.Println(finalURL)
+
+	resp, err = http.Get(finalURL)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		em := fmt.Sprintf("FromGithubRepo: Status Code %d", resp.StatusCode)
+		return errors.New(em)
+	}
+
+
+	// TODO: Let function user control this
+	out, err := os.Create("a.zip")
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
