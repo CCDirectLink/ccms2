@@ -5,14 +5,26 @@ import "net/http"
 import "fmt"
 import "os/exec"
 import "runtime"
+import "github.com/CCDirectLink/ccms2/internal/downloader"
+func apiHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Request", r.URL.String())
+	downloader.FromGithubRepo("https://github.com/2hh8899/ArcaneLab/tree/dev")
 
-type MyHandler struct {
+	fmt.Fprintf(w, "Wassup");
 }
 
-func (h MyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
+func baseHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "This is the base url.");
 }
 
+
+func createApiServer() *http.ServeMux {
+	sm := http.NewServeMux()
+	sm.HandleFunc("/", baseHandler);
+	sm.HandleFunc("/api/", apiHandler)
+	
+	return sm
+}
 
 func launchInBrowser(url string) {
 	var prog string
@@ -48,8 +60,9 @@ func main() {
 	// launch browser
 	launchInBrowser(url)
 
-	handler := MyHandler{}
-	if err := http.Serve(l, handler); err != nil {
+	serv := createApiServer()
+
+	if err := http.Serve(l, serv); err != nil {
 		// handle error
 	}
 
